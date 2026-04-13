@@ -2,7 +2,6 @@
 
 import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSession, signOut } from 'next-auth/react';
 
 type Props = {
   testId: string;
@@ -13,7 +12,6 @@ type Props = {
 
 export default function EditTestForm({ testId, initialTitle, createdBy, updatedBy }: Props) {
   const router = useRouter();
-  const { data: session, status } = useSession();
   const [title, setTitle] = useState(initialTitle);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -50,14 +48,9 @@ export default function EditTestForm({ testId, initialTitle, createdBy, updatedB
     }
   };
 
-  const canEdit = status === 'authenticated';
-
   return (
     <div className="rounded-3xl bg-white p-8 shadow-sm">
-      {!canEdit ? (
-        <div className="text-sm text-red-600">Please sign in to edit this test.</div>
-      ) : (
-        <form className="space-y-6" onSubmit={handleSubmit}>
+      <form className="space-y-6" onSubmit={handleSubmit}>
           <div>
             <label htmlFor="title" className="block text-sm font-medium text-gray-700">
               Title
@@ -93,16 +86,8 @@ export default function EditTestForm({ testId, initialTitle, createdBy, updatedB
             >
               Cancel
             </button>
-            <button
-              type="button"
-              onClick={() => signOut()}
-              className="rounded-2xl border border-gray-300 bg-red-600 px-5 py-3 text-sm font-medium text-white hover:bg-red-700"
-            >
-              Sign out
-            </button>
           </div>
         </form>
-      )}
     </div>
   );
 }
