@@ -80,6 +80,7 @@ export default function Home() {
     }
   };
 
+
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="border-b bg-white shadow-sm">
@@ -214,6 +215,16 @@ export default function Home() {
                         : test.updatedBy?.username || 'Unknown'}
                     </span>
                   </p>
+                  {session && (
+                    <div className="mt-4">
+                      <Link
+                        href={`/tests/${test._id}/edit`}
+                        className="inline-flex rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+                      >
+                        Edit
+                      </Link>
+                    </div>
+                  )}
                   <div className="mt-4 space-y-2 text-sm text-gray-500">
                     <p>Created: {new Date(test.createdAt).toLocaleString()}</p>
                     <p>Updated: {new Date(test.updatedAt).toLocaleString()}</p>

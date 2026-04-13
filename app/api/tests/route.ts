@@ -50,3 +50,51 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json(createdTest, { status: 201 });
 }
+
+export async function PATCH(request: NextRequest) {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user?.id) {
+    return NextResponse.json(
+      { error: 'Unauthorized' },
+      { status: 401 }
+    );
+  }
+
+  const { id, title } = await request.json();
+
+  if (!id || typeof id !== 'string') {
+    return NextResponse.json(
+      { error: 'Test id is required' },
+      { status: 400 }
+    );
+  }
+
+  if (!title || typeof title !== 'string' || !title.trim()) {
+    return NextResponse.json(
+      { error: 'Title is required' },
+      { status: 400 }
+    );
+  }
+
+  await connectToDatabase();
+
+  const test = await Test.findById(id);
+
+  if (!test) {
+    return NextResponse.json(
+      { error: 'Test not found' },
+      { status: 404 }
+    );
+  }
+
+  test.title = title.trim();
+  test.updatedBy = session.user.id;
+  await test.save();
+
+  const updatedTest = await Test.findById(test._id)
+    .populate('createdBy', 'username')
+    .populate('updatedBy', 'username');
+
+  return NextResponse.json(updatedTest);
+}
