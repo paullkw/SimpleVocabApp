@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/db';
 import { Test } from '@/models/Test';
+import { Question } from '@/models/Question';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+
+// Handle large payloads with images
+export const config = {
+  maxDuration: 30,
+};
 
 export async function GET() {
   await connectToDatabase();
@@ -61,7 +67,20 @@ export async function PATCH(request: NextRequest) {
     );
   }
 
-  const { id, title } = await request.json();
+  const { id, title, questions } = await request.json();
+
+  console.log('[API PATCH] Received request:', {
+    id,
+    title: title?.substring(0, 50),
+    questionsCount: Array.isArray(questions) ? questions.length : 'not an array',
+    questionsData: Array.isArray(questions) ? questions.map((q, i) => ({
+      index: i,
+      text: q.text?.substring(0, 50),
+      hasImage: !!q.image,
+      imageLength: q.image?.length || 0,
+      imageMimeType: q.imageMimeType,
+    })) : null,
+  });
 
   if (!id || typeof id !== 'string') {
     return NextResponse.json(
@@ -90,11 +109,62 @@ export async function PATCH(request: NextRequest) {
 
   test.title = title.trim();
   test.updatedBy = session.user.id;
+
+  // Handle questions if provided
+  if (Array.isArray(questions)) {
+    // Delete existing questions first
+    await Question.deleteMany({ test: id });
+    
+    const questionIds = [];
+    
+    for (const q of questions) {
+      if (!q.text || typeof q.text !== 'string' || !q.text.trim()) {
+        return NextResponse.json(
+          { error: 'All questions must have text' },
+          { status: 400 }
+        );
+      }
+
+      try {
+        // Create or update question
+        console.log(`[API PATCH] Creating question ${questions.indexOf(q) + 1}:`, {
+          text: q.text?.substring(0, 50),
+          imageLength: q.image?.length || 0,
+          imageMimeType: q.imageMimeType,
+        });
+
+        const questionDoc = new Question({
+          text: q.text.trim(),
+          image: q.image || null,
+          imageMimeType: q.imageMimeType || null,
+          test: id,
+        });
+
+        const savedQuestion = await questionDoc.save();
+        console.log(`[API PATCH] Saved question ${savedQuestion._id}:`, {
+          text: savedQuestion.text?.substring(0, 50),
+          imageLength: savedQuestion.image?.length || 0,
+          imageMimeType: savedQuestion.imageMimeType,
+        });
+        questionIds.push(savedQuestion._id);
+      } catch (err) {
+        console.error('[API PATCH] Error saving question:', err);
+        return NextResponse.json(
+          { error: 'Failed to save question: ' + (err instanceof Error ? err.message : 'Unknown error') },
+          { status: 400 }
+        );
+      }
+    }
+
+    test.questions = questionIds;
+  }
+
   await test.save();
 
   const updatedTest = await Test.findById(test._id)
     .populate('createdBy', 'username')
-    .populate('updatedBy', 'username');
+    .populate('updatedBy', 'username')
+    .populate('questions');
 
   return NextResponse.json(updatedTest);
 }

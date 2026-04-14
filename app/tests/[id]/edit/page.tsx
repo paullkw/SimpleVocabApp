@@ -11,7 +11,8 @@ export default async function EditTestPage({ params }: { params: Promise<{ id: s
 
   const test = await Test.findById(id)
     .populate('createdBy', 'username')
-    .populate('updatedBy', 'username');
+    .populate('updatedBy', 'username')
+    .populate('questions', 'text image imageMimeType');
 
   console.log('Found test:', test);
 
@@ -43,6 +44,14 @@ export default async function EditTestPage({ params }: { params: Promise<{ id: s
       ? test.updatedBy
       : test.updatedBy?.username || 'Unknown';
 
+  // Extract only necessary fields from questions to avoid circular references
+  const initialQuestions = (test.questions || []).map((q: any) => ({
+    id: q._id?.toString(),
+    text: q.text || '',
+    image: q.image || '',
+    imageMimeType: q.imageMimeType || '',
+  }));
+
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="border-b bg-white shadow-sm">
@@ -71,6 +80,7 @@ export default async function EditTestPage({ params }: { params: Promise<{ id: s
             initialTitle={test.title}
             createdBy={createdBy}
             updatedBy={updatedBy}
+            initialQuestions={initialQuestions}
           />
         </div>
       </main>
