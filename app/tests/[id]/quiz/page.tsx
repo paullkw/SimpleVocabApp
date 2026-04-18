@@ -57,7 +57,7 @@ export default function QuizPage() {
       const allQuestions: Question[] = await allQuestionsResponse.json();
 
       // Filter questions that have text (which is now the answer)
-      const questionsWithAnswers = testData.questions.filter((q: Question) => q.text && q.text.trim());
+      const questionsWithAnswers = testData.questions.filter((q: Question) => q.text && q.text.trim()).sort(() => 0.5 - Math.random());
 
       // Filter all questions that have text for random distractors
       const allQuestionsWithAnswers = allQuestions.filter((q: Question) => q.text && q.text.trim());
