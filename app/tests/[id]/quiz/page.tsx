@@ -85,6 +85,16 @@ export default function QuizPage() {
         .filter((q: Question) => q.active && q.text && q.text.trim())
         .sort(() => 0.5 - Math.random());
 
+      // Check if we have at least 4 active questions
+      if (questionsWithAnswers.length < 4) {
+        if (currentLoadId === loadRef.current) {
+          setError(`This quiz requires at least 4 active questions. Currently only ${questionsWithAnswers.length} active question(s) available.`);
+          setLoading(false);
+          setIsReady(true);
+        }
+        return;
+      }
+
       // Filter all questions that have text for random distractors
       const allQuestionsWithAnswers = allQuestions.filter((q: Question) => q.text && q.text.trim());
 
