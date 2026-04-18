@@ -9,6 +9,7 @@ type Question = {
   text: string;
   image?: string;
   imageMimeType?: string;
+  active?: boolean;
 };
 
 type QuizQuestion = {
@@ -81,7 +82,7 @@ export default function QuizPage() {
 
       // Filter questions that have text (which is now the answer)
       const questionsWithAnswers = [...(testData.questions || [])]
-        .filter((q: Question) => q.text && q.text.trim())
+        .filter((q: Question) => q.active && q.text && q.text.trim())
         .sort(() => 0.5 - Math.random());
 
       // Filter all questions that have text for random distractors

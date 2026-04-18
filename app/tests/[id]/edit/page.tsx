@@ -12,7 +12,7 @@ export default async function EditTestPage({ params }: { params: Promise<{ id: s
   const test = await Test.findById(id)
     .populate('createdBy', 'username')
     .populate('updatedBy', 'username')
-    .populate('questions', 'text image imageMimeType');
+    .populate('questions', 'text image imageMimeType active');
 
   console.log('Found test:', test);
 
@@ -50,6 +50,7 @@ export default async function EditTestPage({ params }: { params: Promise<{ id: s
     text: q.text || '',
     image: q.image || '',
     imageMimeType: q.imageMimeType || '',
+    active: q.active ?? false,
   }));
 
   return (

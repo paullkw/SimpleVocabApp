@@ -20,6 +20,10 @@ const questionSchema = new mongoose.Schema(
       ref: 'Test',
       required: true,
     },
+    active: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,

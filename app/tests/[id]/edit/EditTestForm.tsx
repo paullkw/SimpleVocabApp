@@ -8,6 +8,7 @@ type Question = {
   text: string;
   image: string;
   imageMimeType: string;
+  active?: boolean;
 };
 
 type Props = {
@@ -27,7 +28,7 @@ export default function EditTestForm({ testId, initialTitle, createdBy, updatedB
   const imagesRef = useRef<Map<number, { base64: string; mimeType: string }>>(new Map());
 
   const handleAddQuestion = () => {
-    setQuestions([...questions, { text: '', image: '', imageMimeType: '' }]);
+    setQuestions([...questions, { text: '', image: '', imageMimeType: '', active: false }]);
   };
 
   const handleRemoveQuestion = (index: number) => {
@@ -35,9 +36,10 @@ export default function EditTestForm({ testId, initialTitle, createdBy, updatedB
     imagesRef.current.delete(index);
   };
 
-  const handleQuestionChange = (index: number, field: keyof Question, value: string) => {
+  const handleQuestionChange = (index: number, field: keyof Question, value: string | boolean) => {
     const updatedQuestions = [...questions];
     updatedQuestions[index] = { ...updatedQuestions[index], [field]: value };
+    console.log(updatedQuestions)
     setQuestions(updatedQuestions);
   };
 
@@ -117,12 +119,14 @@ export default function EditTestForm({ testId, initialTitle, createdBy, updatedB
           hasImage: !!imageData,
           imageLength: imageData.length,
           imageMimeType: imageMimeType,
+          active: q.active,
         });
         
         return {
           text: q.text.trim(),
           image: imageData,
           imageMimeType: imageMimeType,
+          active: q.active ?? false,
         };
       });
 
@@ -219,6 +223,19 @@ export default function EditTestForm({ testId, initialTitle, createdBy, updatedB
                         className="w-full rounded-2xl border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none"
                         rows={2}
                       />
+                    </div>
+
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id={`active-${index}`}
+                        checked={question.active ?? false}
+                        onChange={(e) => handleQuestionChange(index, 'active', e.target.checked)}
+                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <label htmlFor={`active-${index}`} className="ml-2 text-sm font-medium text-gray-700">
+                        Active (show in quiz)
+                      </label>
                     </div>
 
                     <div>

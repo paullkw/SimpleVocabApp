@@ -131,6 +131,7 @@ export async function PATCH(request: NextRequest) {
           text: q.text?.substring(0, 50),
           imageLength: q.image?.length || 0,
           imageMimeType: q.imageMimeType,
+          active: q.active,
         });
 
         const questionDoc = new Question({
@@ -138,6 +139,7 @@ export async function PATCH(request: NextRequest) {
           image: q.image || null,
           imageMimeType: q.imageMimeType || null,
           test: id,
+          active: q.active ?? false,
         });
 
         const savedQuestion = await questionDoc.save();
@@ -145,6 +147,7 @@ export async function PATCH(request: NextRequest) {
           text: savedQuestion.text?.substring(0, 50),
           imageLength: savedQuestion.image?.length || 0,
           imageMimeType: savedQuestion.imageMimeType,
+          active: savedQuestion.active,
         });
         questionIds.push(savedQuestion._id);
       } catch (err) {
