@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from 'react';
 import { useSession, signOut } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 type TestItem = {
@@ -9,18 +10,26 @@ type TestItem = {
   title: string;
   createdAt: string;
   updatedAt: string;
-  createdBy: { username: string } | string;
-  updatedBy: { username: string } | string;
+  createdBy: { _id: string; username: string } | string;
+  updatedBy: { _id: string; username: string } | string;
 };
 
 export default function Home() {
-  const { data: session } = useSession();
+  const router = useRouter();
+  const { data: session, status } = useSession();
   const [tests, setTests] = useState<TestItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [createLoading, setCreateLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [title, setTitle] = useState('');
   const [error, setError] = useState('');
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/login');
+    }
+  }, [status, router]);
 
   const loadTests = async () => {
     setLoading(true);
@@ -43,8 +52,10 @@ export default function Home() {
   };
 
   useEffect(() => {
-    loadTests();
-  }, []);
+    if (status === 'authenticated') {
+      loadTests();
+    }
+  }, [status]);
 
   const handleCreate = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();

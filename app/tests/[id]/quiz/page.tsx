@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 
 type Question = {
@@ -27,6 +28,7 @@ type AnswerStatus = {
 export default function QuizPage() {
   const params = useParams();
   const router = useRouter();
+  const { data: session, status } = useSession();
   const testId = params.id as string;
 
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
@@ -38,8 +40,15 @@ export default function QuizPage() {
   const [error, setError] = useState('');
   const loadRef = useRef(0);
 
+  // Redirect to login if not authenticated
   useEffect(() => {
-    if (!testId) return;
+    if (status === 'unauthenticated') {
+      router.push('/login');
+    }
+  }, [status, router]);
+
+  useEffect(() => {
+    if (!testId || status !== 'authenticated') return;
     loadRef.current += 1;
     setLoading(true);
     setIsReady(false);
@@ -49,7 +58,7 @@ export default function QuizPage() {
     setShowResult(false);
     setError('');
     loadQuiz(loadRef.current);
-  }, [testId]);
+  }, [testId, status]);
 
   const normalizeImageSrc = (question: Question) => {
     if (!question.image) return undefined;
@@ -71,6 +80,18 @@ export default function QuizPage() {
       }
       const testData = await testResponse.json();
       if (currentLoadId !== loadRef.current) return;
+      
+      // Check if current user is the creator of this test
+      const testCreatorId = typeof testData.createdBy === 'string' ? testData.createdBy : testData.createdBy?._id;
+      if (testCreatorId !== session?.user?.id) {
+        if (currentLoadId === loadRef.current) {
+          setError('You do not have permission to access this test. Only the creator can take their own tests.');
+          setLoading(false);
+          setIsReady(true);
+        }
+        return;
+      }
+
       setTestData(testData);
 
       // Fetch all questions for random answers

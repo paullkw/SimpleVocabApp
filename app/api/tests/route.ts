@@ -11,9 +11,18 @@ export const config = {
 };
 
 export async function GET() {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user?.id) {
+    return NextResponse.json(
+      { error: 'Unauthorized' },
+      { status: 401 }
+    );
+  }
+
   await connectToDatabase();
 
-  const tests = await Test.find()
+  const tests = await Test.find({ createdBy: session.user.id })
     .populate('createdBy', 'username')
     .populate('updatedBy', 'username')
     .sort({ createdAt: -1 });

@@ -1,22 +1,17 @@
 import Link from 'next/link';
 import { connectToDatabase } from '@/lib/db';
 import { Test } from '@/models/Test';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 import EditTestForm from './EditTestForm';
 
 export default async function EditTestPage({ params }: { params: Promise<{ id: string }> }) {
+  const session = await getServerSession(authOptions);
   const { id } = await params;
   console.log('EditTestPage params:', { id });
 
-  await connectToDatabase();
-
-  const test = await Test.findById(id)
-    .populate('createdBy', 'username')
-    .populate('updatedBy', 'username')
-    .populate('questions', 'text image imageMimeType active');
-
-  console.log('Found test:', test);
-
-  if (!test) {
+  // Check if user is authenticated
+  if (!session?.user?.id) {
     return (
       <div className="min-h-screen bg-gray-50">
         <header className="border-b bg-white shadow-sm">
@@ -28,7 +23,37 @@ export default async function EditTestPage({ params }: { params: Promise<{ id: s
         </header>
         <main className="mx-auto max-w-3xl px-6 py-10">
           <div className="rounded-3xl bg-white p-8 shadow-sm">
-            <p className="text-sm text-gray-600">Test not found.</p>
+            <p className="text-sm text-gray-600">Please sign in to edit tests.</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  await connectToDatabase();
+
+  const test = await Test.findById(id)
+    .populate('createdBy', 'username')
+    .populate('updatedBy', 'username')
+    .populate('questions', 'text image imageMimeType active');
+
+  console.log('Found test:', test);
+
+  // Check if user is the creator of this test
+  const testCreatorId = typeof test?.createdBy === 'string' ? test?.createdBy : test?.createdBy?._id;
+  if (!test || testCreatorId !== session.user.id) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <header className="border-b bg-white shadow-sm">
+          <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+            <Link href="/" className="text-2xl font-bold text-gray-900">
+              Simple Vocab
+            </Link>
+          </nav>
+        </header>
+        <main className="mx-auto max-w-3xl px-6 py-10">
+          <div className="rounded-3xl bg-white p-8 shadow-sm">
+            <p className="text-sm text-gray-600">Test not found or you do not have permission to edit this test.</p>
           </div>
         </main>
       </div>
