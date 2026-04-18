@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -33,13 +33,35 @@ export default function QuizPage() {
   const [answers, setAnswers] = useState<Map<string, AnswerStatus>>(new Map());
   const [showResult, setShowResult] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState('');
+  const loadRef = useRef(0);
 
   useEffect(() => {
-    loadQuiz();
+    if (!testId) return;
+    loadRef.current += 1;
+    setLoading(true);
+    setIsReady(false);
+    setQuizQuestions([]);
+    setTestData(null);
+    setAnswers(new Map());
+    setShowResult(false);
+    setError('');
+    loadQuiz(loadRef.current);
   }, [testId]);
 
-  const loadQuiz = async () => {
+  const normalizeImageSrc = (question: Question) => {
+    if (!question.image) return undefined;
+    if (question.image.startsWith('data:')) {
+      return question.image;
+    }
+    const mimeType = question.imageMimeType || 'image/png';
+    return `data:${mimeType};base64,${question.image}`;
+  };
+
+  const loadQuiz = async (loadId?: number) => {
+    const currentLoadId = loadId ?? loadRef.current;
+    if (!testId) return;
     try {
       // Fetch the test with questions
       const testResponse = await fetch(`/api/tests/${testId}`);
@@ -47,6 +69,7 @@ export default function QuizPage() {
         throw new Error('Failed to load test');
       }
       const testData = await testResponse.json();
+      if (currentLoadId !== loadRef.current) return;
       setTestData(testData);
 
       // Fetch all questions for random answers
@@ -57,7 +80,9 @@ export default function QuizPage() {
       const allQuestions: Question[] = await allQuestionsResponse.json();
 
       // Filter questions that have text (which is now the answer)
-      const questionsWithAnswers = testData.questions.filter((q: Question) => q.text && q.text.trim()).sort(() => 0.5 - Math.random());
+      const questionsWithAnswers = [...(testData.questions || [])]
+        .filter((q: Question) => q.text && q.text.trim())
+        .sort(() => 0.5 - Math.random());
 
       // Filter all questions that have text for random distractors
       const allQuestionsWithAnswers = allQuestions.filter((q: Question) => q.text && q.text.trim());
@@ -94,17 +119,26 @@ export default function QuizPage() {
           .sort(() => 0.5 - Math.random());
 
         return {
-          question: q,
+          question: {
+            ...q,
+            image: normalizeImageSrc(q),
+          },
           options,
           correctAnswer,
         };
       });
 
+      if (currentLoadId !== loadRef.current) return;
       setQuizQuestions(quizQs);
+      setIsReady(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load quiz');
+      if (currentLoadId === loadRef.current) {
+        setError(err instanceof Error ? err.message : 'Failed to load quiz');
+      }
     } finally {
-      setLoading(false);
+      if (currentLoadId === loadRef.current) {
+        setLoading(false);
+      }
     }
   };
 
@@ -126,9 +160,13 @@ export default function QuizPage() {
   };
 
   const handleRestart = () => {
+    loadRef.current += 1;
     setAnswers(new Map());
     setShowResult(false);
-    loadQuiz(); // Reload to reshuffle
+    setLoading(true);
+    setIsReady(false);
+    setError('');
+    loadQuiz(loadRef.current); // Reload to reshuffle
   };
 
   const getScore = () => {
@@ -139,7 +177,7 @@ export default function QuizPage() {
     return correct;
   };
 
-  if (loading) {
+  if (loading || !isReady) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -250,7 +288,7 @@ export default function QuizPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div key={testId} className="min-h-screen bg-gray-50">
       <header className="border-b bg-white shadow-sm">
         <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <Link href="/" className="text-2xl font-bold text-gray-900">
