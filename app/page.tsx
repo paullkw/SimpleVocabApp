@@ -216,12 +216,18 @@ export default function Home() {
                     </span>
                   </p>
                   {session && (
-                    <div className="mt-4">
+                    <div className="mt-4 space-x-2">
                       <Link
                         href={`/tests/${test._id}/edit`}
                         className="inline-flex rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
                       >
                         Edit
+                      </Link>
+                      <Link
+                        href={`/tests/${test._id}/quiz`}
+                        className="inline-flex rounded-2xl bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
+                      >
+                        Multiple Choice
                       </Link>
                     </div>
                   )}

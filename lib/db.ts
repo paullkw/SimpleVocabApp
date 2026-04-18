@@ -1,5 +1,10 @@
 import mongoose from 'mongoose';
 
+// Import models to register them
+import '@/models/User';
+import '@/models/Test';
+import '@/models/Question';
+
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/simplevocab';
 
 if (!MONGODB_URI) {

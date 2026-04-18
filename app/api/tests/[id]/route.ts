@@ -11,7 +11,8 @@ export async function GET(
 
   const test = await Test.findById(params.id)
     .populate('createdBy', 'username')
-    .populate('updatedBy', 'username');
+    .populate('updatedBy', 'username')
+    .populate('questions', 'text image imageMimeType');
 
   if (!test) {
     return NextResponse.json({ error: 'Test not found' }, { status: 404 });
