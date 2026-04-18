@@ -31,6 +31,68 @@ export default function EditTestForm({ testId, initialTitle, createdBy, updatedB
     setQuestions([...questions, { text: '', image: '', imageMimeType: '', active: false }]);
   };
 
+  const handleBulkImageUpload = (files: FileList | null) => {
+    if (!files) return;
+
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    let errorMsg = '';
+    let loadedCount = 0;
+    const questionsToAdd: Question[] = [];
+    const totalFiles = files.length;
+
+    Array.from(files).forEach((file, fileIndex) => {
+      // Validate file size
+      if (file.size > maxSize) {
+        errorMsg = `${file.name} is too large. Max size: 5MB`;
+        loadedCount++;
+        return;
+      }
+
+      // Extract filename without extension
+      const filename = file.name.split('.').slice(0, -1).join('.');
+
+      // Read file as base64
+      const reader = new FileReader();
+
+      reader.onload = (e) => {
+        const base64 = e.target?.result as string;
+        const currentIndex = questions.length + fileIndex;
+        
+        // Store in ref
+        imagesRef.current.set(currentIndex, {
+          base64,
+          mimeType: file.type,
+        });
+
+        // Create new question with filename as text
+        questionsToAdd[fileIndex] = {
+          text: filename,
+          image: base64,
+          imageMimeType: file.type,
+          active: true,
+        };
+
+        loadedCount++;
+
+        // When all files are loaded, add them to questions
+        if (loadedCount === totalFiles) {
+          setQuestions([...questions, ...questionsToAdd.filter(Boolean)]);
+        }
+      };
+
+      reader.onerror = () => {
+        errorMsg = `Failed to read ${file.name}`;
+        loadedCount++;
+      };
+
+      reader.readAsDataURL(file);
+    });
+
+    if (errorMsg) {
+      setError(errorMsg);
+    }
+  };
+
   const handleRemoveQuestion = (index: number) => {
     setQuestions(questions.filter((_, i) => i !== index));
     imagesRef.current.delete(index);
@@ -180,17 +242,29 @@ export default function EditTestForm({ testId, initialTitle, createdBy, updatedB
           </div>
 
           <div>
-            <div className="mb-4 flex items-center justify-between">
+            <div className="mb-4 flex items-center justify-between gap-2">
               <label className="block text-sm font-medium text-gray-700">
                 Questions
               </label>
-              <button
-                type="button"
-                onClick={handleAddQuestion}
-                className="rounded-2xl bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
-              >
-                + Add Question
-              </button>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={handleAddQuestion}
+                  className="rounded-2xl bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
+                >
+                  + Add Question
+                </button>
+                <label className="rounded-2xl bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 cursor-pointer">
+                  + Upload Images
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    onChange={(e) => handleBulkImageUpload(e.target.files)}
+                    className="hidden"
+                  />
+                </label>
+              </div>
             </div>
             
             {questions.length === 0 ? (
