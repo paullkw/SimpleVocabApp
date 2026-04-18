@@ -269,9 +269,7 @@ export default function QuizPage() {
           </div>
 
           <div className="mb-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">
-              {currentQuizQuestion.question.text}
-            </h2>
+            {/* Question text is hidden as it contains the answer */}
             {currentQuizQuestion.question.image && (
               <img
                 src={currentQuizQuestion.question.image}
