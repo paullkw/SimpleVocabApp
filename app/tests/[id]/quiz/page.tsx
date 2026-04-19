@@ -69,6 +69,23 @@ export default function QuizPage() {
     return `data:${mimeType};base64,${question.image}`;
   };
 
+  const normalizeAnswerKey = (answer: string) => answer.trim().replace(/\s+/g, ' ').toLowerCase();
+
+  const uniqueAnswers = (answers: string[]) => {
+    const seen = new Set<string>();
+
+    return answers.filter((answer) => {
+      const normalizedAnswer = normalizeAnswerKey(answer);
+
+      if (!normalizedAnswer || seen.has(normalizedAnswer)) {
+        return false;
+      }
+
+      seen.add(normalizedAnswer);
+      return true;
+    });
+  };
+
   const loadQuiz = async (loadId?: number) => {
     const currentLoadId = loadId ?? loadRef.current;
     if (!testId) return;
@@ -126,11 +143,15 @@ export default function QuizPage() {
       // Generate quiz questions
       const quizQs: QuizQuestion[] = questionsWithAnswers.map((q: Question) => {
         const correctAnswer = q.text.trim();
+        const correctAnswerKey = normalizeAnswerKey(correctAnswer);
+
         // Get 3 random answers from other questions
-        const otherAnswers = allQuestionsWithAnswers
-          .filter(otherQ => otherQ._id !== q._id)
-          .map(otherQ => otherQ.text.trim())
-          .filter(answer => answer !== correctAnswer); // Avoid duplicates
+        const otherAnswers = uniqueAnswers(
+          allQuestionsWithAnswers
+            .filter(otherQ => otherQ._id !== q._id)
+            .map(otherQ => otherQ.text.trim())
+            .filter(answer => normalizeAnswerKey(answer) !== correctAnswerKey)
+        );
 
         // Shuffle and take up to 3
         const shuffled = otherAnswers.sort(() => 0.5 - Math.random());
@@ -140,7 +161,10 @@ export default function QuizPage() {
         // If not enough random answers, add some dummy options
         while (randomAnswers.length < 3) {
           const dummyOptions = ['Incorrect Answer', 'Wrong Choice', 'Not This One'];
-          const availableDummies = dummyOptions.filter(opt => !randomAnswers.includes(opt) && opt !== correctAnswer);
+          const usedAnswerKeys = new Set(randomAnswers.map(normalizeAnswerKey));
+          const availableDummies = dummyOptions.filter(
+            opt => !usedAnswerKeys.has(normalizeAnswerKey(opt)) && normalizeAnswerKey(opt) !== correctAnswerKey
+          );
           if (availableDummies.length > 0) {
             randomAnswers.push(availableDummies[0]);
           } else {
@@ -150,7 +174,7 @@ export default function QuizPage() {
         }
 
         // Combine correct and random answers, shuffle, and filter out empties
-        const options = [correctAnswer, ...randomAnswers]
+        const options = uniqueAnswers([correctAnswer, ...randomAnswers])
           .filter(opt => opt && opt.trim())
           .sort(() => 0.5 - Math.random());
 
