@@ -37,6 +37,7 @@ export default function QuizPage() {
   const [showResult, setShowResult] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isReady, setIsReady] = useState(false);
+  const [submittingQuestionIds, setSubmittingQuestionIds] = useState<Set<string>>(new Set());
   const [error, setError] = useState('');
   const loadRef = useRef(0);
 
@@ -202,17 +203,52 @@ export default function QuizPage() {
     }
   };
 
-  const handleAnswerSelect = (questionIndex: number, answer: string) => {
+  const handleAnswerSelect = async (questionIndex: number, answer: string) => {
     const question = quizQuestions[questionIndex];
     const isCorrect = answer === question.correctAnswer;
-    
+    const questionId = question.question._id;
+
+    setSubmittingQuestionIds((current) => new Set(current).add(questionId));
+
     const newAnswers = new Map(answers);
-    newAnswers.set(question.question._id, {
-      questionId: question.question._id,
+    newAnswers.set(questionId, {
+      questionId,
       selectedAnswer: answer,
       isCorrect,
     });
     setAnswers(newAnswers);
+
+    try {
+      const response = await fetch(`/api/tests/${testId}/quiz-results`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          answers: [
+            {
+              questionId,
+              isCorrect,
+            },
+          ],
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to save answer');
+      }
+    } catch (err) {
+      const revertedAnswers = new Map(newAnswers);
+      revertedAnswers.delete(questionId);
+      setAnswers(revertedAnswers);
+      setError(err instanceof Error ? err.message : 'Unable to save answer');
+    } finally {
+      setSubmittingQuestionIds((current) => {
+        const updated = new Set(current);
+        updated.delete(questionId);
+        return updated;
+      });
+    }
   };
 
   const handleFinishQuiz = () => {
@@ -367,6 +403,7 @@ export default function QuizPage() {
           {quizQuestions.map((quizQuestion, questionIndex) => {
             const answerStatus = answers.get(quizQuestion.question._id);
             const isAnswered = !!answerStatus;
+            const isSubmittingAnswer = submittingQuestionIds.has(quizQuestion.question._id);
             
             return (
               <div key={quizQuestion.question._id} className="rounded-3xl bg-white p-8 shadow-sm">
@@ -412,7 +449,7 @@ export default function QuizPage() {
                       <button
                         key={index}
                         onClick={() => !isAnswered && handleAnswerSelect(questionIndex, option)}
-                        disabled={isAnswered}
+                        disabled={isAnswered || isSubmittingAnswer}
                         className={`w-full text-left p-4 rounded-2xl border-2 transition-colors disabled:cursor-default ${borderClass} ${bgClass} ${
                           !isAnswered ? 'cursor-pointer' : ''
                         }`}
@@ -432,6 +469,10 @@ export default function QuizPage() {
                     );
                   })}
                 </div>
+
+                {isSubmittingAnswer && (
+                  <p className="mt-3 text-sm text-gray-500">Saving answer...</p>
+                )}
               </div>
             );
           })}
@@ -446,7 +487,7 @@ export default function QuizPage() {
           </Link>
           <button
             onClick={handleFinishQuiz}
-            disabled={answers.size !== quizQuestions.length}
+            disabled={answers.size !== quizQuestions.length || submittingQuestionIds.size > 0}
             className="rounded-2xl bg-blue-600 px-6 py-3 text-white hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
             Finish Quiz

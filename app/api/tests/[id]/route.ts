@@ -24,6 +24,55 @@ export async function GET(
   return NextResponse.json(test);
 }
 
+export async function PATCH(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const params = await context.params;
+  const body = await request.json();
+  const consecutiveCorrectToDeactivate = Number(body.consecutiveCorrectToDeactivate);
+
+  if (!Number.isInteger(consecutiveCorrectToDeactivate) || consecutiveCorrectToDeactivate < 1) {
+    return NextResponse.json(
+      { error: 'Consecutive correct count must be an integer greater than 0' },
+      { status: 400 }
+    );
+  }
+
+  await connectToDatabase();
+
+  const test = await Test.findById(params.id);
+
+  if (!test) {
+    return NextResponse.json({ error: 'Test not found' }, { status: 404 });
+  }
+
+  const testCreatorId = String(test.createdBy || '');
+  const currentUserId = String(session.user.id || '');
+
+  if (!testCreatorId || testCreatorId !== currentUserId) {
+    return NextResponse.json(
+      { error: 'You do not have permission to update this test setting' },
+      { status: 403 }
+    );
+  }
+
+  test.consecutiveCorrectToDeactivate = consecutiveCorrectToDeactivate;
+  test.updatedBy = session.user.id;
+  await test.save();
+
+  return NextResponse.json({
+    message: 'Test settings updated successfully',
+    consecutiveCorrectToDeactivate: test.consecutiveCorrectToDeactivate,
+  });
+}
+
 export async function DELETE(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }

@@ -24,6 +24,11 @@ const questionSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    consecutiveCorrectCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
   },
   {
     timestamps: true,

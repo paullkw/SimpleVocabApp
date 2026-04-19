@@ -17,6 +17,11 @@ const testSchema = new mongoose.Schema(
       ref: 'User',
       required: true,
     },
+    consecutiveCorrectToDeactivate: {
+      type: Number,
+      default: 3,
+      min: 1,
+    },
     questions: [
       {
         type: mongoose.Schema.Types.ObjectId,

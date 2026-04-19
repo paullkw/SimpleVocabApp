@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { connectToDatabase } from '@/lib/db';
 import { Test } from '@/models/Test';
+import SettingsForm from './SettingsForm';
 
 export default async function TestSettingsPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions);
@@ -102,6 +103,10 @@ export default async function TestSettingsPage({ params }: { params: Promise<{ i
               <p className="text-sm text-gray-600">Updated by</p>
               <p className="text-sm font-medium text-gray-900">{updatedBy}</p>
             </div>
+            <div>
+              <p className="text-sm text-gray-600">Consecutive correct to inactivate</p>
+              <p className="text-sm font-medium text-gray-900">{Number(test.consecutiveCorrectToDeactivate || 3)}</p>
+            </div>
             <div className="flex flex-wrap gap-3 pt-2">
               <Link
                 href={`/tests/${id}/edit`}
@@ -116,6 +121,13 @@ export default async function TestSettingsPage({ params }: { params: Promise<{ i
                 Multiple Choice
               </Link>
             </div>
+          </div>
+
+          <div className="mt-8">
+            <SettingsForm
+              testId={id}
+              initialConsecutiveCorrectToDeactivate={Number(test.consecutiveCorrectToDeactivate || 3)}
+            />
           </div>
         </div>
       </main>
