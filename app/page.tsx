@@ -297,6 +297,12 @@ export default function Home() {
                       >
                         Incorrect Report
                       </Link>
+                      <Link
+                        href={`/tests/${test._id}/clone`}
+                        className="inline-flex rounded-2xl bg-cyan-600 px-4 py-2 text-sm font-medium text-white hover:bg-cyan-700"
+                      >
+                        Clone
+                      </Link>
                       <button
                         type="button"
                         onClick={() => handleDelete(test._id, test.title)}
