@@ -20,6 +20,7 @@ export default function Home() {
   const [tests, setTests] = useState<TestItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [createLoading, setCreateLoading] = useState(false);
+  const [deletingTestId, setDeletingTestId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [title, setTitle] = useState('');
   const [error, setError] = useState('');
@@ -30,23 +31,6 @@ export default function Home() {
       router.push('/login');
     }
   }, [status, router]);
-
-  // Show loading state while checking authentication
-  if (status === 'loading') {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Redirect if not authenticated
-  if (!session) {
-    return null;
-  }
 
   const loadTests = async () => {
     setLoading(true);
@@ -73,6 +57,23 @@ export default function Home() {
       loadTests();
     }
   }, [status]);
+
+  // Show loading state while checking authentication
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Redirect if not authenticated
+  if (!session) {
+    return null;
+  }
 
   const handleCreate = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -105,6 +106,33 @@ export default function Home() {
       setError('Unable to create test');
     } finally {
       setCreateLoading(false);
+    }
+  };
+
+  const handleDelete = async (testId: string, title: string) => {
+    const confirmed = window.confirm(`Delete test \"${title}\"? This cannot be undone.`);
+    if (!confirmed) return;
+
+    setError('');
+    setDeletingTestId(testId);
+
+    try {
+      const response = await fetch(`/api/tests/${testId}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || 'Failed to delete test');
+        return;
+      }
+
+      setTests((current) => current.filter((test) => test._id !== testId));
+    } catch (err) {
+      setError('Unable to delete test');
+    } finally {
+      setDeletingTestId(null);
     }
   };
 
@@ -257,6 +285,14 @@ export default function Home() {
                       >
                         Multiple Choice
                       </Link>
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(test._id, test.title)}
+                        disabled={deletingTestId === test._id}
+                        className="inline-flex rounded-2xl bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-400"
+                      >
+                        {deletingTestId === test._id ? 'Deleting...' : 'Delete'}
+                      </button>
                     </div>
                   )}
                   <div className="mt-4 space-y-2 text-sm text-gray-500">
