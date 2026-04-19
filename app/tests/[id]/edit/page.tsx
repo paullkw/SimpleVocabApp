@@ -40,8 +40,12 @@ export default async function EditTestPage({ params }: { params: Promise<{ id: s
   console.log('Found test:', test);
 
   // Check if user is the creator of this test
-  const testCreatorId = typeof test?.createdBy === 'string' ? test?.createdBy : test?.createdBy?._id;
-  if (!test || testCreatorId !== session.user.id) {
+  const testCreatorId = test
+    ? String(typeof test.createdBy === 'string' ? test.createdBy : test.createdBy?._id || '')
+    : '';
+  const currentUserId = String(session.user.id || '');
+
+  if (!test || !testCreatorId || testCreatorId !== currentUserId) {
     return (
       <div className="min-h-screen bg-gray-50">
         <header className="border-b bg-white shadow-sm">

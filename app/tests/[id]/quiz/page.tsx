@@ -82,8 +82,12 @@ export default function QuizPage() {
       if (currentLoadId !== loadRef.current) return;
       
       // Check if current user is the creator of this test
-      const testCreatorId = typeof testData.createdBy === 'string' ? testData.createdBy : testData.createdBy?._id;
-      if (testCreatorId !== session?.user?.id) {
+      const testCreatorId = String(
+        typeof testData.createdBy === 'string' ? testData.createdBy : testData.createdBy?._id || ''
+      );
+      const currentUserId = String(session?.user?.id || '');
+
+      if (!testCreatorId || testCreatorId !== currentUserId) {
         if (currentLoadId === loadRef.current) {
           setError('You do not have permission to access this test. Only the creator can take their own tests.');
           setLoading(false);
