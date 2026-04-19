@@ -8,6 +8,7 @@ type CloneQuestion = {
   text: string;
   image?: string;
   imageMimeType?: string;
+  totalIncorrectCount?: number;
 };
 
 type Props = {
@@ -130,6 +131,9 @@ export default function CloneTestForm({ testId, initialTitle, questions }: Props
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-gray-900">Question {index + 1}</p>
                     <p className="mt-1 break-words text-sm text-gray-700">{question.text || '(No text)'}</p>
+                    <p className="mt-1 text-xs text-gray-600">
+                      Incorrect count: {Number(question.totalIncorrectCount || 0)}
+                    </p>
                     {question.image && (
                       <img
                         src={normalizeImageSrc(question)}

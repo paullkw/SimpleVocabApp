@@ -37,7 +37,7 @@ export default async function CloneTestPage({ params }: { params: Promise<{ id: 
 
   const test = await Test.findById(id)
     .populate('createdBy', 'username')
-    .populate('questions', 'text image imageMimeType')
+    .populate('questions', 'text image imageMimeType totalIncorrectCount')
     .lean();
 
   const testCreatorId = test
@@ -66,12 +66,15 @@ export default async function CloneTestPage({ params }: { params: Promise<{ id: 
 
   const now = new Date();
   const initialTitle = `${(test as any).title} ${formatDateTimeSuffix(now)}`;
-  const questions = (Array.isArray((test as any).questions) ? (test as any).questions : []).map((question: any) => ({
-    id: String(question._id),
-    text: question.text || '',
-    image: question.image || '',
-    imageMimeType: question.imageMimeType || '',
-  }));
+  const questions = (Array.isArray((test as any).questions) ? (test as any).questions : [])
+    .map((question: any) => ({
+      id: String(question._id),
+      text: question.text || '',
+      image: question.image || '',
+      imageMimeType: question.imageMimeType || '',
+      totalIncorrectCount: Number(question.totalIncorrectCount || 0),
+    }))
+    .sort((a: any, b: any) => b.totalIncorrectCount - a.totalIncorrectCount);
 
   return (
     <div className="min-h-screen bg-gray-50">
