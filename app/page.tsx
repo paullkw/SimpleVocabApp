@@ -291,6 +291,12 @@ export default function Home() {
                       >
                         Setting
                       </Link>
+                      <Link
+                        href={`/tests/${test._id}/incorrect-report`}
+                        className="inline-flex rounded-2xl bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700"
+                      >
+                        Incorrect Report
+                      </Link>
                       <button
                         type="button"
                         onClick={() => handleDelete(test._id, test.title)}
