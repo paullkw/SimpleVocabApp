@@ -272,7 +272,7 @@ export default function Home() {
                     </span>
                   </p>
                   {session && (
-                    <div className="mt-4 space-x-2">
+                    <div className="mt-4 flex flex-wrap gap-2">
                       <Link
                         href={`/tests/${test._id}/edit`}
                         className="inline-flex rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
@@ -285,6 +285,12 @@ export default function Home() {
                       >
                         Multiple Choice
                       </Link>
+                      <Link
+                        href={`/tests/${test._id}/settings`}
+                        className="inline-flex rounded-2xl bg-slate-600 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
+                      >
+                        Setting
+                      </Link>
                       <button
                         type="button"
                         onClick={() => handleDelete(test._id, test.title)}
@@ -295,7 +301,7 @@ export default function Home() {
                       </button>
                     </div>
                   )}
-                  <div className="mt-4 space-y-2 text-sm text-gray-500">
+                  <div className="mt-6 space-y-2 text-sm text-gray-500">
                     <p>Created: {new Date(test.createdAt).toLocaleString()}</p>
                     <p>Updated: {new Date(test.updatedAt).toLocaleString()}</p>
                   </div>
