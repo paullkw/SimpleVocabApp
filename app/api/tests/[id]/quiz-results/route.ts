@@ -71,6 +71,7 @@ export async function POST(
       }
     } else {
       question.consecutiveCorrectCount = 0;
+      question.totalIncorrectCount = Number(question.totalIncorrectCount || 0) + 1;
     }
 
     await question.save();

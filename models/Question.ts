@@ -29,6 +29,11 @@ const questionSchema = new mongoose.Schema(
       default: 0,
       min: 0,
     },
+    totalIncorrectCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
   },
   {
     timestamps: true,
