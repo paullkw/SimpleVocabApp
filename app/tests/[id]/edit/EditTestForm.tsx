@@ -105,6 +105,15 @@ export default function EditTestForm({ testId, initialTitle, createdBy, updatedB
     setQuestions(updatedQuestions);
   };
 
+  const handleActivateAllQuestions = () => {
+    setQuestions((currentQuestions) =>
+      currentQuestions.map((question) => ({
+        ...question,
+        active: true,
+      }))
+    );
+  };
+
   const handleImageUpload = (index: number, file: File) => {
     try {
       console.log(`[Image Upload] Starting for question ${index}, file: ${file.name}, size: ${file.size}`);
@@ -253,6 +262,14 @@ export default function EditTestForm({ testId, initialTitle, createdBy, updatedB
                   className="rounded-2xl bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
                 >
                   + Add Question
+                </button>
+                <button
+                  type="button"
+                  onClick={handleActivateAllQuestions}
+                  disabled={questions.length === 0}
+                  className="rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-emerald-300"
+                >
+                  Activate All
                 </button>
                 <label className="rounded-2xl bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 cursor-pointer">
                   + Upload Images
