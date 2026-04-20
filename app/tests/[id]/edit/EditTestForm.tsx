@@ -194,6 +194,7 @@ export default function EditTestForm({ testId, initialTitle, createdBy, updatedB
         });
         
         return {
+          id: q.id,
           text: q.text.trim(),
           image: imageData,
           imageMimeType: imageMimeType,

@@ -121,9 +121,11 @@ export async function PATCH(request: NextRequest) {
 
   // Handle questions if provided
   if (Array.isArray(questions)) {
-    // Delete existing questions first
-    await Question.deleteMany({ test: id });
-    
+    const existingQuestions = await Question.find({ test: id });
+    const existingQuestionsById = new Map(
+      existingQuestions.map((questionDoc) => [String(questionDoc._id), questionDoc])
+    );
+
     const questionIds = [];
     
     for (const q of questions) {
@@ -143,22 +145,42 @@ export async function PATCH(request: NextRequest) {
           active: q.active,
         });
 
-        const questionDoc = new Question({
-          text: q.text.trim(),
-          image: q.image || null,
-          imageMimeType: q.imageMimeType || null,
-          test: id,
-          active: q.active ?? false,
-        });
+        const existingQuestion =
+          typeof q.id === 'string' ? existingQuestionsById.get(q.id) : undefined;
 
-        const savedQuestion = await questionDoc.save();
-        console.log(`[API PATCH] Saved question ${savedQuestion._id}:`, {
-          text: savedQuestion.text?.substring(0, 50),
-          imageLength: savedQuestion.image?.length || 0,
-          imageMimeType: savedQuestion.imageMimeType,
-          active: savedQuestion.active,
-        });
-        questionIds.push(savedQuestion._id);
+        if (existingQuestion) {
+          existingQuestion.text = q.text.trim();
+          existingQuestion.image = q.image || null;
+          existingQuestion.imageMimeType = q.imageMimeType || null;
+          existingQuestion.active = q.active ?? false;
+
+          const savedQuestion = await existingQuestion.save();
+          console.log(`[API PATCH] Updated question ${savedQuestion._id}:`, {
+            text: savedQuestion.text?.substring(0, 50),
+            imageLength: savedQuestion.image?.length || 0,
+            imageMimeType: savedQuestion.imageMimeType,
+            active: savedQuestion.active,
+            totalIncorrectCount: savedQuestion.totalIncorrectCount,
+          });
+          questionIds.push(savedQuestion._id);
+        } else {
+          const questionDoc = new Question({
+            text: q.text.trim(),
+            image: q.image || null,
+            imageMimeType: q.imageMimeType || null,
+            test: id,
+            active: q.active ?? false,
+          });
+
+          const savedQuestion = await questionDoc.save();
+          console.log(`[API PATCH] Created question ${savedQuestion._id}:`, {
+            text: savedQuestion.text?.substring(0, 50),
+            imageLength: savedQuestion.image?.length || 0,
+            imageMimeType: savedQuestion.imageMimeType,
+            active: savedQuestion.active,
+          });
+          questionIds.push(savedQuestion._id);
+        }
       } catch (err) {
         console.error('[API PATCH] Error saving question:', err);
         return NextResponse.json(
@@ -167,6 +189,11 @@ export async function PATCH(request: NextRequest) {
         );
       }
     }
+
+    await Question.deleteMany({
+      test: id,
+      _id: { $nin: questionIds },
+    });
 
     test.questions = questionIds;
   }
