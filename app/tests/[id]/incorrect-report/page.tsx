@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { connectToDatabase } from '@/lib/db';
 import { Test } from '@/models/Test';
+import ResetIncorrectCountsButton from './ResetIncorrectCountsButton';
 
 export default async function IncorrectReportPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions);
@@ -82,10 +83,15 @@ export default async function IncorrectReportPage({ params }: { params: Promise<
       <main className="mx-auto max-w-5xl px-6 py-10">
         <div className="rounded-3xl bg-white p-8 shadow-sm">
           <div className="mb-6">
-            <h1 className="text-3xl font-bold text-gray-900">Incorrect Report</h1>
-            <p className="mt-2 text-sm text-gray-600">
-              Test: <span className="font-medium text-gray-900">{(test as any).title}</span>
-            </p>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">Incorrect Report</h1>
+                <p className="mt-2 text-sm text-gray-600">
+                  Test: <span className="font-medium text-gray-900">{(test as any).title}</span>
+                </p>
+              </div>
+              <ResetIncorrectCountsButton testId={id} />
+            </div>
           </div>
 
           {sortedQuestions.length === 0 ? (
