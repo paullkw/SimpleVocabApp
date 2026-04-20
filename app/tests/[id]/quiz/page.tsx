@@ -116,13 +116,6 @@ export default function QuizPage() {
 
       setTestData(testData);
 
-      // Fetch all questions for random answers
-      const allQuestionsResponse = await fetch('/api/questions');
-      if (!allQuestionsResponse.ok) {
-        throw new Error('Failed to load questions');
-      }
-      const allQuestions: Question[] = await allQuestionsResponse.json();
-
       // Filter questions that have text (which is now the answer)
       const questionsWithAnswers = [...(testData.questions || [])]
         .filter((q: Question) => q.active && q.text && q.text.trim())
@@ -138,8 +131,8 @@ export default function QuizPage() {
         return;
       }
 
-      // Filter all questions that have text for random distractors
-      const allQuestionsWithAnswers = allQuestions.filter((q: Question) => q.text && q.text.trim());
+      // Use only questions in the current test for random distractors.
+      const questionsInCurrentTestWithAnswers = questionsWithAnswers;
 
       // Generate quiz questions
       const quizQs: QuizQuestion[] = questionsWithAnswers.map((q: Question) => {
@@ -148,7 +141,7 @@ export default function QuizPage() {
 
         // Get 3 random answers from other questions
         const otherAnswers = uniqueAnswers(
-          allQuestionsWithAnswers
+          questionsInCurrentTestWithAnswers
             .filter(otherQ => otherQ._id !== q._id)
             .map(otherQ => otherQ.text.trim())
             .filter(answer => normalizeAnswerKey(answer) !== correctAnswerKey)
