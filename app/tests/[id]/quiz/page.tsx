@@ -214,7 +214,10 @@ export default function QuizPage() {
     try {
       const response = await fetch(`/api/tests/${testId}/quiz-results`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
         body: JSON.stringify({
           answers: [
             {
@@ -225,10 +228,27 @@ export default function QuizPage() {
         }),
       });
 
-      const data = await response.json();
+      const contentType = response.headers.get('content-type') || '';
+      let errorMessage = 'Failed to save answer';
+
+      if (contentType.includes('application/json')) {
+        const data = await response.json();
+        if (!response.ok) {
+          errorMessage = data?.error || errorMessage;
+        }
+      } else {
+        const text = await response.text();
+        if (!response.ok) {
+          // Some failures can return an HTML error page; avoid JSON parse crashes.
+          errorMessage =
+            text?.trim().startsWith('<!DOCTYPE') || text?.trim().startsWith('<html')
+              ? `Request failed (${response.status}). Please refresh and try again.`
+              : text || `Request failed (${response.status})`;
+        }
+      }
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to save answer');
+        throw new Error(errorMessage);
       }
     } catch (err) {
       const revertedAnswers = new Map(newAnswers);
