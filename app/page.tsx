@@ -303,6 +303,12 @@ export default function Home() {
                       >
                         Clone
                       </Link>
+                      <Link
+                        href={`/tests/${test._id}/flashcard`}
+                        className="inline-flex rounded-2xl bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700"
+                      >
+                        Flashcard
+                      </Link>
                       <button
                         type="button"
                         onClick={() => handleDelete(test._id, test.title)}
