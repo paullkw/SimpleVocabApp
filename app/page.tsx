@@ -286,6 +286,12 @@ export default function Home() {
                         Multiple Choice
                       </Link>
                       <Link
+                        href={`/tests/${test._id}/flashcard`}
+                        className="inline-flex rounded-2xl bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700"
+                      >
+                        Flashcard
+                      </Link>
+                      <Link
                         href={`/tests/${test._id}/settings`}
                         className="inline-flex rounded-2xl bg-slate-600 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
                       >
@@ -302,12 +308,6 @@ export default function Home() {
                         className="inline-flex rounded-2xl bg-cyan-600 px-4 py-2 text-sm font-medium text-white hover:bg-cyan-700"
                       >
                         Clone
-                      </Link>
-                      <Link
-                        href={`/tests/${test._id}/flashcard`}
-                        className="inline-flex rounded-2xl bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700"
-                      >
-                        Flashcard
                       </Link>
                       <button
                         type="button"
