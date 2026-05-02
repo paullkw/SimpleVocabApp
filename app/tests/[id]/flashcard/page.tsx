@@ -177,12 +177,6 @@ export default function FlashcardPage() {
           <Link href="/" className="text-2xl font-bold text-gray-900">
             Simple Vocab
           </Link>
-          <Link
-            href={`/tests/${testId}/quiz`}
-            className="text-sm text-blue-600 hover:underline"
-          >
-            Back to Quiz
-          </Link>
         </nav>
       </header>
       <main className="mx-auto max-w-2xl px-6 py-10">
