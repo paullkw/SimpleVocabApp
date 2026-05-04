@@ -292,7 +292,7 @@ export default function MatchingPage() {
                     type="button"
                     disabled={isMatched || !selectedPromptId}
                     onClick={() => handleSelectAnswer(choice._id)}
-                    className={`w-full rounded-2xl border px-4 py-3 text-left transition ${
+                    className={`w-full rounded-2xl border px-4 py-4 text-left text-xl transition ${
                       isMatched
                         ? 'border-green-200 bg-green-50 text-green-700'
                         : !selectedPromptId
