@@ -212,13 +212,14 @@ export default function QuizPage() {
     setAnswers(newAnswers);
 
     try {
-      const response = await fetch(`/api/tests/${testId}/quiz-results`, {
+      const response = await fetch('/api/quiz-results', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Accept: 'application/json',
         },
         body: JSON.stringify({
+          testId,
           answers: [
             {
               questionId,
