@@ -231,7 +231,6 @@ export default function WordSearchPage() {
   const [dragPathKeys, setDragPathKeys] = useState<string[]>([]);
   const [startCell, setStartCell] = useState<Coord | null>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [feedback, setFeedback] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const loadRef = useRef(0);
@@ -270,7 +269,6 @@ export default function WordSearchPage() {
     setDragPathKeys([]);
     setStartCell(null);
     setIsDragging(false);
-    setFeedback('');
     setError('');
     return true;
   };
@@ -353,7 +351,6 @@ export default function WordSearchPage() {
     });
 
     if (!matchedPlacement) {
-      setFeedback('Not a target word. Keep searching.');
       return;
     }
 
@@ -369,7 +366,7 @@ export default function WordSearchPage() {
       return next;
     });
 
-    setFeedback('Correct word found!');
+
   };
 
   const beginDrag = (row: number, col: number) => {
@@ -377,7 +374,6 @@ export default function WordSearchPage() {
     setStartCell({ row, col });
     setIsDragging(true);
     setDragPathKeys([key]);
-    setFeedback('');
   };
 
   const extendDrag = (row: number, col: number) => {
@@ -488,7 +484,7 @@ export default function WordSearchPage() {
           <p className="mt-1 text-xs text-gray-500">
             Restart will prioritize questions you have not done yet, then fill remaining slots with randomized previously shown questions.
           </p>
-          {feedback && <p className="mt-3 text-sm font-medium text-blue-700">{feedback}</p>}
+
         </div>
 
         {puzzle && (
