@@ -315,7 +315,10 @@ export default function CrosswordPage() {
   const [seenQuestionIds, setSeenQuestionIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [currentDirection, setCurrentDirection] = useState<Direction | null>(null);
+  const [lastFilledCell, setLastFilledCell] = useState<string | null>(null);
   const loadRef = useRef(0);
+  const cellRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   const getRoundSize = (totalQuestions: number) =>
     Math.min(MAX_CROSSWORD_QUESTIONS, Math.max(MIN_CROSSWORD_QUESTIONS, totalQuestions || 0));
@@ -371,6 +374,8 @@ export default function CrosswordPage() {
     setRoundQuestions(round.questions);
     setLayout(round.layout);
     setCellInputs({});
+    setCurrentDirection(null);
+    setLastFilledCell(null);
   };
 
   useEffect(() => {
@@ -447,7 +452,98 @@ export default function CrosswordPage() {
 
   const handleCellChange = (key: string, value: string) => {
     const nextValue = value.replace(/[^a-z0-9]/gi, '').toUpperCase().slice(-1);
-    setCellInputs((current) => ({ ...current, [key]: nextValue }));
+    setCellInputs((current) => {
+      const updated = { ...current, [key]: nextValue };
+      
+      // Check if the entered character is correct
+      if (nextValue && layout) {
+        const cell = layout.cells[key];
+        if (cell && nextValue === cell.solution) {
+          // Character is correct, determine direction from previous cell
+          let detectedDirection: Direction | null = null;
+          
+          // If we have a previous cell, detect direction from movement
+          if (lastFilledCell && lastFilledCell !== key) {
+            const [prevRowStr, prevColStr] = lastFilledCell.split(',');
+            const [currRowStr, currColStr] = key.split(',');
+            const prevRow = Number(prevRowStr);
+            const prevCol = Number(prevColStr);
+            const currRow = Number(currRowStr);
+            const currCol = Number(currColStr);
+            
+            // Determine direction based on which coordinate changed
+            if (currRow !== prevRow) {
+              detectedDirection = 'down';
+            } else if (currCol !== prevCol) {
+              detectedDirection = 'across';
+            }
+          }
+          
+          // Update last filled cell for next iteration
+          setLastFilledCell(key);
+          
+          // Focus to next available (empty) cell in the same direction
+          const [rowStr, colStr] = key.split(',');
+          const row = Number(rowStr);
+          const col = Number(colStr);
+          
+          // Use detected direction, fallback to current direction, then try both
+          const directionsToTry: Direction[] = [];
+          if (detectedDirection) {
+            directionsToTry.push(detectedDirection);
+            setCurrentDirection(detectedDirection);
+          } else if (currentDirection) {
+            directionsToTry.push(currentDirection);
+          } else {
+            directionsToTry.push('across', 'down');
+          }
+          
+          // Find entries that contain this cell, prioritize the detected/current direction
+          let targetKey: string | null = null;
+          
+          for (const direction of directionsToTry) {
+            for (const entry of layout.entries) {
+              if (entry.direction !== direction) continue;
+              
+              const stepRow = entry.direction === 'down' ? 1 : 0;
+              const stepCol = entry.direction === 'across' ? 1 : 0;
+              
+              for (let i = 0; i < entry.answer.length; i += 1) {
+                const cellRow = entry.row + stepRow * i;
+                const cellCol = entry.col + stepCol * i;
+                
+                if (cellRow === row && cellCol === col) {
+                  // Found the entry in this direction
+                  // Look for next empty cell in this direction
+                  for (let j = i + 1; j < entry.answer.length; j += 1) {
+                    const nextCellRow = entry.row + stepRow * j;
+                    const nextCellCol = entry.col + stepCol * j;
+                    const nextCellKey = cellKey(nextCellRow, nextCellCol);
+                    
+                    // Skip already filled cells
+                    if (!updated[nextCellKey]) {
+                      targetKey = nextCellKey;
+                      break;
+                    }
+                  }
+                  break;
+                }
+              }
+              if (targetKey) break;
+            }
+            if (targetKey) break;
+          }
+          
+          if (targetKey) {
+            setTimeout(() => {
+              cellRefs.current[targetKey]?.focus();
+            }, 0);
+          }
+        }
+      }
+      
+      return updated;
+    });
   };
 
   const isCellCorrect = (key: string) => {
@@ -464,6 +560,31 @@ export default function CrosswordPage() {
       if (!isCellCorrect(cellKey(row, col))) return false;
     }
     return true;
+  };
+
+  const handleCellFocus = (key: string) => {
+    // Determine which direction this cell should navigate
+    if (!layout) return;
+    
+    const [rowStr, colStr] = key.split(',');
+    const row = Number(rowStr);
+    const col = Number(colStr);
+    
+    // Find the first entry containing this cell and set that as current direction
+    for (const entry of layout.entries) {
+      const stepRow = entry.direction === 'down' ? 1 : 0;
+      const stepCol = entry.direction === 'across' ? 1 : 0;
+      
+      for (let i = 0; i < entry.answer.length; i += 1) {
+        const cellRow = entry.row + stepRow * i;
+        const cellCol = entry.col + stepCol * i;
+        
+        if (cellRow === row && cellCol === col) {
+          setCurrentDirection(entry.direction);
+          return;
+        }
+      }
+    }
   };
 
   const solvedCount = layout ? layout.entries.filter((entry) => isEntrySolved(entry)).length : 0;
@@ -590,8 +711,12 @@ export default function CrosswordPage() {
                           </span>
                         )}
                         <input
+                          ref={(el) => {
+                            if (el) cellRefs.current[key] = el;
+                          }}
                           value={typed}
                           onChange={(event) => handleCellChange(key, event.target.value)}
+                          onFocus={() => handleCellFocus(key)}
                           className={`h-10 w-10 rounded-md border-2 bg-white text-center text-lg font-bold uppercase focus:outline-none ${
                             !hasValue
                               ? 'border-gray-300 text-gray-900 focus:border-blue-500'
