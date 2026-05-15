@@ -434,10 +434,10 @@ export default function TypingGamePage() {
                 Play Again
               </button>
               <Link
-                href={`/tests/${testId}`}
+                href="/"
                 className="w-full inline-flex justify-center rounded-2xl bg-blue-600 px-6 py-3 text-sm font-medium text-white hover:bg-blue-700"
               >
-                Back to Test
+                Back to Tests
               </Link>
             </div>
           </div>
