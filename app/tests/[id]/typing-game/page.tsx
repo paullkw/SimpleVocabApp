@@ -52,6 +52,22 @@ export default function TypingGamePage() {
   const loadRef = useRef(0);
   const questionIndexRef = useRef(0);
   const nextCardIdRef = useRef(0);
+  const penalizedCardIdsRef = useRef<Set<string>>(new Set());
+
+  const stopGameTimers = () => {
+    if (gameLoopRef.current) {
+      clearInterval(gameLoopRef.current);
+      gameLoopRef.current = null;
+    }
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    if (cardSpawnRef.current) {
+      clearInterval(cardSpawnRef.current);
+      cardSpawnRef.current = null;
+    }
+  };
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -98,6 +114,9 @@ export default function TypingGamePage() {
 
   // Start game
   const startGame = () => {
+    // Ensure old loops are stopped before creating new ones.
+    stopGameTimers();
+
     setGameStarted(true);
     setGameOver(false);
     setScore(0);
@@ -106,6 +125,7 @@ export default function TypingGamePage() {
     setFallingCards([]);
     questionIndexRef.current = 0;
     nextCardIdRef.current = 0;
+    penalizedCardIdsRef.current.clear();
 
     // Spawn first card immediately
     spawnCard();
@@ -113,6 +133,7 @@ export default function TypingGamePage() {
     // Game loop - update card positions
     gameLoopRef.current = setInterval(() => {
       setFallingCards((prev) => {
+        let missedCount = 0;
         const updated = prev.map((card) => ({
           ...card,
           position: card.position + 2,
@@ -122,11 +143,18 @@ export default function TypingGamePage() {
         // Remove cards that fell off screen or were matched
         const filtered = updated.filter((card) => {
           if (card.position > 600) {
-            setScore((s) => Math.max(0, s - 100));
+            if (!penalizedCardIdsRef.current.has(card.id)) {
+              penalizedCardIdsRef.current.add(card.id);
+              missedCount += 1;
+            }
             return false;
           }
           return true;
         });
+
+        if (missedCount > 0) {
+          setScore((s) => Math.max(0, s - missedCount * 100));
+        }
 
         return filtered;
       });
@@ -235,18 +263,14 @@ export default function TypingGamePage() {
   useEffect(() => {
     if (gameStarted && timeLeft === 0) {
       setGameOver(true);
-      if (gameLoopRef.current) clearInterval(gameLoopRef.current);
-      if (timerRef.current) clearInterval(timerRef.current);
-      if (cardSpawnRef.current) clearInterval(cardSpawnRef.current);
+      stopGameTimers();
     }
   }, [timeLeft, gameStarted]);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (gameLoopRef.current) clearInterval(gameLoopRef.current);
-      if (timerRef.current) clearInterval(timerRef.current);
-      if (cardSpawnRef.current) clearInterval(cardSpawnRef.current);
+      stopGameTimers();
     };
   }, []);
 
