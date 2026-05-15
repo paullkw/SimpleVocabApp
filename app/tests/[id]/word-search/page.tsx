@@ -36,6 +36,15 @@ const MAX_WORD_SEARCH_QUESTIONS = 8;
 const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
 const normalizeAnswer = (value: string) => value.replace(/[^a-z]/gi, '').toUpperCase();
+const formatDisplayAnswer = (value: string, fallback: string) => {
+  const formatted = value
+    .toUpperCase()
+    .replace(/[^A-Z\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  return formatted || fallback;
+};
 const keyFromCoord = (row: number, col: number) => `${row},${col}`;
 
 const shuffle = <T,>(items: T[]) => {
@@ -533,6 +542,7 @@ export default function WordSearchPage() {
               <div className="space-y-3">
                 {puzzle.placements.map((placement, index) => {
                   const solved = solvedLookup.has(placement.id);
+                  const displayAnswer = formatDisplayAnswer(placement.question.text, placement.answer);
 
                   return (
                     <div
@@ -542,7 +552,7 @@ export default function WordSearchPage() {
                       }`}
                     >
                       <p className="text-sm font-semibold text-gray-800">
-                        {index + 1}. {solved ? placement.answer : '????'} ({placement.answer.length})
+                        {index + 1}. {solved ? displayAnswer : '????'} ({placement.answer.length})
                       </p>
                       <div className="mt-2">
                         {placement.question.image ? (
