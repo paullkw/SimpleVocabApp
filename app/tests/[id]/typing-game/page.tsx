@@ -25,6 +25,7 @@ type FallingCard = {
 const CARD_WIDTH = 192;
 const CARD_HORIZONTAL_GAP = 24;
 const CARD_SAFE_TOP_ZONE = 220;
+const CARD_SIDE_PADDING = 24;
 
 export default function TypingGamePage() {
   const params = useParams();
@@ -160,13 +161,14 @@ export default function TypingGamePage() {
     setFallingCards((prev) => {
       const windowWidth = typeof window !== 'undefined' ? window.innerWidth : 1024;
       const laneWidth = CARD_WIDTH + CARD_HORIZONTAL_GAP;
-      const laneCount = Math.max(1, Math.floor(windowWidth / laneWidth));
-      const maxX = Math.max(0, windowWidth - CARD_WIDTH);
+      const spawnAreaWidth = Math.max(CARD_WIDTH, windowWidth - CARD_SIDE_PADDING * 2);
+      const laneCount = Math.max(1, Math.floor((spawnAreaWidth + CARD_HORIZONTAL_GAP) / laneWidth));
+      const maxX = Math.max(CARD_SIDE_PADDING, windowWidth - CARD_SIDE_PADDING - CARD_WIDTH);
 
       const availableLanes: number[] = [];
 
       for (let lane = 0; lane < laneCount; lane += 1) {
-        const laneStart = lane * laneWidth;
+        const laneStart = CARD_SIDE_PADDING + lane * laneWidth;
         const laneEnd = Math.min(laneStart + CARD_WIDTH, maxX + CARD_WIDTH);
 
         // A lane is available only if no visible card is still close to the spawn zone.
@@ -188,7 +190,7 @@ export default function TypingGamePage() {
       }
 
       const selectedLane = availableLanes[Math.floor(Math.random() * availableLanes.length)];
-      const rawX = selectedLane * laneWidth;
+      const rawX = CARD_SIDE_PADDING + selectedLane * laneWidth;
       const xPos = Math.min(rawX, maxX);
 
       const cardToAdd: FallingCard = {
